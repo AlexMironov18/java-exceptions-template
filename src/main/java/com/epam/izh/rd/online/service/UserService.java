@@ -1,6 +1,9 @@
 package com.epam.izh.rd.online.service;
 
 import com.epam.izh.rd.online.entity.User;
+import com.epam.izh.rd.online.exception.NotAccessException;
+import com.epam.izh.rd.online.exception.SimplePasswordException;
+import com.epam.izh.rd.online.exception.UserAlreadyRegisteredException;
 import com.epam.izh.rd.online.repository.IUserRepository;
 import com.epam.izh.rd.online.repository.UserRepository;
 
@@ -30,8 +33,14 @@ public class UserService implements IUserService {
      * @param user - даныне регистрирующегося пользователя
      */
     @Override
-    public User register(User user) {
+    public User register(User user) throws UserAlreadyRegisteredException, SimplePasswordException {
 
+        if (user.getLogin().equals("") || user.getPassword().equals("") || user.getLogin() == null ||
+                user.getPassword() == null) throw new IllegalArgumentException("Ошибка в заполнении полей");
+        if (userRepository.findByLogin(user.getLogin()) != null) throw new UserAlreadyRegisteredException(user);
+        String passwordWONumbers;
+        passwordWONumbers = user.getPassword().replaceAll("[0-9]", "");
+        if (passwordWONumbers.length() == 0) throw new SimplePasswordException();
         //
         // Здесь необходимо реализовать перечисленные выше проверки
         //
@@ -58,8 +67,12 @@ public class UserService implements IUserService {
      *
      * @param login
      */
-    public void delete(String login) {
-
+    public void delete(String login) throws NotAccessException {
+        try {
+            if (!login.equals("Admin")) throw new UnsupportedOperationException();
+        } catch (UnsupportedOperationException e) {
+            throw new NotAccessException();
+        }
         // Здесь необходимо сделать доработку метод
 
             userRepository.deleteByLogin(login);
